@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#ffffff" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Expenses" />
+<title>Expense Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; padding-bottom: 2rem; }
+  .header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 16px 20px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 10; }
+  .header-icon { font-size: 22px; }
+  .header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+  .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+  .total-card { background: #1a1a1a; color: #fff; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+  .total-label { font-size: 13px; opacity: 0.6; margin-bottom: 4px; }
+  .total-amount { font-size: 36px; font-weight: 600; letter-spacing: -0.5px; }
+  .total-sub { font-size: 13px; opacity: 0.5; margin-top: 4px; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat-box { background: #fff; border-radius: 12px; padding: 14px 16px; border: 1px solid #e8e8e8; }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .stat-val { font-size: 20px; font-weight: 600; }
+  .form-card { background: #fff; border-radius: 16px; padding: 18px; margin-bottom: 14px; border: 1px solid #e8e8e8; }
+  .form-label { font-size: 13px; color: #555; margin-bottom: 6px; display: block; font-weight: 500; }
+  .form-input { width: 100%; padding: 13px 14px; font-size: 16px; border: 1.5px solid #e0e0e0; border-radius: 10px; background: #fafafa; color: #1a1a1a; outline: none; transition: border-color 0.15s; margin-bottom: 12px; font-family: inherit; }
+  .form-input:focus { border-color: #1a1a1a; background: #fff; }
+  .form-input.error { border-color: #e24b4a; }
+  .form-input::placeholder { color: #bbb; }
+  .add-btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 10px; background: #1a1a1a; color: #fff; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s, transform 0.1s; }
+  .add-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+  /* tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; background: #fff; border-radius: 12px; padding: 6px; border: 1px solid #e8e8e8; }
+  .tab { flex: 1; padding: 8px 4px; font-size: 13px; font-weight: 500; text-align: center; border-radius: 8px; border: none; background: none; cursor: pointer; color: #888; font-family: inherit; transition: all 0.15s; }
+  .tab.active { background: #1a1a1a; color: #fff; }
+
+  /* filter bar */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .filter-bar input[type="month"] { flex: 1; padding: 9px 12px; font-size: 14px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fff; color: #1a1a1a; outline: none; font-family: inherit; }
+  .filter-bar input[type="month"]:focus { border-color: #1a1a1a; }
+  .reset-btn { font-size: 13px; color: #888; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .reset-btn:active { background: #f0f0f0; }
+
+  /* date group */
+  .date-group { margin-bottom: 16px; }
+  .date-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px 8px; }
+  .date-label { font-size: 13px; font-weight: 600; color: #555; }
+  .date-total { font-size: 13px; font-weight: 600; color: #1a1a1a; background: #f0f0f0; padding: 3px 10px; border-radius: 20px; }
+  .expense-list { display: flex; flex-direction: column; gap: 8px; }
+  .expense-item { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .exp-left { display: flex; align-items: center; gap: 12px; }
+  .exp-icon { width: 40px; height: 40px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .exp-name { font-size: 15px; font-weight: 600; }
+  .exp-time { font-size: 12px; color: #aaa; margin-top: 2px; }
+  .exp-right { display: flex; align-items: center; gap: 10px; }
+  .exp-amount { font-size: 15px; font-weight: 600; }
+  .del-btn { background: none; border: none; cursor: pointer; color: #ccc; padding: 6px; border-radius: 50%; font-size: 18px; transition: color 0.15s; }
+  .del-btn:active { color: #e24b4a; }
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .section-title { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
+  .clear-btn { font-size: 13px; color: #888; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-family: inherit; }
+  .clear-btn:active { background: #f0f0f0; }
+  .install-tip { background: #eef4ff; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .install-tip p { font-size: 13px; color: #3366cc; line-height: 1.5; }
+  .tip-dismiss { background: none; border: none; color: #3366cc; cursor: pointer; font-size: 16px; flex-shrink: 0; padding: 0; margin-top: 2px; }
+
+  /* monthly summary chart bars */
+  .monthly-list { display: flex; flex-direction: column; gap: 10px; }
+  .month-row { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 14px 16px; }
+  .month-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .month-name { font-size: 14px; font-weight: 600; }
+  .month-amt { font-size: 14px; font-weight: 600; }
+  .month-bar-bg { height: 6px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+  .month-bar-fill { height: 100%; background: #1a1a1a; border-radius: 4px; transition: width 0.4s ease; }
+  .month-meta { font-size: 12px; color: #aaa; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-icon">💰</span>
+  <h1>Expense Tracker</h1>
+</div>
+
+<div class="container">
+
+  <div class="install-tip" id="install-tip">
+    <p>📲 <strong>Install as app:</strong> Tap Chrome menu (⋮) → <em>Add to Home screen</em> → Add</p>
+    <button class="tip-dismiss" onclick="document.getElementById('install-tip').remove()" aria-label="Dismiss">✕</button>
+  </div>
+
+  <div class="total-card">
+    <div class="total-label" id="total-label">Total spent</div>
+    <div class="total-amount" id="total">₹0.00</div>
+    <div class="total-sub" id="total-sub"></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-label">Entries</div>
+      <div class="stat-val" id="count">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Avg per day</div>
+      <div class="stat-val" id="avg">₹0</div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <label class="form-label" for="exp-name">Expense type</label>
+    <input class="form-input" id="exp-name" type="text" placeholder="e.g. Groceries, Fuel, Lunch…" autocomplete="off" />
+    <label class="form-label" for="exp-amount">Amount (₹)</label>
+    <input class="form-input" id="exp-amount" type="number" placeholder="0.00" min="0" step="0.01" inputmode="decimal" />
+    <button class="add-btn" onclick="addExpense()">＋ &nbsp;Add expense</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-daily" onclick="switchTab('daily')">📅 Daily</button>
+    <button class="tab" id="tab-monthly" onclick="switchTab('monthly')">📊 Monthly</button>
+  </div>
+
+  <div id="view-daily">
+    <div class="filter-bar">
+      <input type="month" id="month-filter" onchange="render()" />
+      <button class="reset-btn" onclick="resetFilter()">All</button>
+    </div>
+    <div class="section-header">
+      <div class="section-title" id="history-label">History</div>
+      <button class="clear-btn" onclick="clearAll()">Clear all</button>
+    </div>
+    <div id="expense-list"></div>
+  </div>
+
+  <div id="view-monthly" style="display:none;">
+    <div id="monthly-list"></div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'expense_tracker_v2';
+let expenses = [];
+let activeTab = 'daily';
+
+function load() {
+  try { expenses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { expenses = []; }
+  // init month filter to current month
+  const now = new Date();
+  document.getElementById('month-filter').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  render();
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses)); } catch(e) {}
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('view-daily').style.display = tab === 'daily' ? '' : 'none';
+  document.getElementById('view-monthly').style.display = tab === 'monthly' ? '' : 'none';
+  document.getElementById('tab-daily').className = 'tab' + (tab === 'daily' ? ' active' : '');
+  document.getElementById('tab-monthly').className = 'tab' + (tab === 'monthly' ? ' active' : '');
+  render();
+}
+
+function resetFilter() {
+  const now = new Date();
+  document.getElementById('month-filter').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  render();
+}
+
+function getEmoji(name) {
+  const n = name.toLowerCase();
+  if (/food|lunch|dinner|breakfast|eat|biryani|meal|tiffin|snack|swiggy|zomato/.test(n)) return '🍽️';
+  if (/fuel|petrol|diesel|gas|cng/.test(n)) return '⛽';
+  if (/grocery|groceries|vegetable|fruit|sabzi|market/.test(n)) return '🛒';
+  if (/cab|uber|ola|auto|bus|train|metro|travel|transport|ticket|flight/.test(n)) return '🚗';
+  if (/medicine|doctor|hospital|pharmacy|medical|health/.test(n)) return '💊';
+  if (/rent|pg|room|house|hostel/.test(n)) return '🏠';
+  if (/bill|electricity|wifi|internet|recharge|mobile|phone/.test(n)) return '⚡';
+  if (/coffee|tea|chai|cafe/.test(n)) return '☕';
+  if (/movie|entertainment|game|outing|party/.test(n)) return '🎬';
+  if (/clothes|shirt|shoes|shopping|amazon|flipkart/.test(n)) return '🛍️';
+  if (/gym|sport|fitness/.test(n)) return '💪';
+  return '💸';
+}
+
+function fmt(n) {
+  return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function dateKey(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function monthKey(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function friendlyDate(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  const date = new Date(y, m-1, d);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
+  if (date.getTime() === today.getTime()) return 'Today';
+  if (date.getTime() === yesterday.getTime()) return 'Yesterday';
+  return date.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function friendlyMonth(key) {
+  const [y, m] = key.split('-').map(Number);
+  return new Date(y, m-1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+}
+
+function addExpense() {
+  const nameEl = document.getElementById('exp-name');
+  const amtEl = document.getElementById('exp-amount');
+  const name = nameEl.value.trim();
+  const amount = parseFloat(amtEl.value);
+  nameEl.classList.remove('error'); amtEl.classList.remove('error');
+  if (!name) { nameEl.classList.add('error'); nameEl.focus(); return; }
+  if (!amount || amount <= 0) { amtEl.classList.add('error'); amtEl.focus(); return; }
+  expenses.unshift({ id: Date.now(), name, amount, ts: Date.now() });
+  save(); render();
+  nameEl.value = ''; amtEl.value = ''; nameEl.focus();
+}
+
+function deleteExpense(id) {
+  expenses = expenses.filter(e => e.id !== id);
+  save(); render();
+}
+
+function clearAll() {
+  if (!expenses.length) return;
+  if (confirm('Delete all expenses? This cannot be undone.')) { expenses = []; save(); render(); }
+}
+
+function render() {
+  const filterVal = document.getElementById('month-filter').value; // "YYYY-MM"
+
+  // filter to selected month
+  const filtered = expenses.filter(e => monthKey(e.ts) === filterVal);
+  const total = filtered.reduce((s, e) => s + e.amount, 0);
+  const count = filtered.length;
+
+  // unique days
+  const days = [...new Set(filtered.map(e => dateKey(e.ts)))];
+  const avgPerDay = days.length ? Math.round(total / days.length) : 0;
+
+  document.getElementById('total').textContent = fmt(total);
+  document.getElementById('total-label').textContent = 'Total — ' + (filterVal ? friendlyMonth(filterVal) : 'All time');
+  document.getElementById('count').textContent = count;
+  document.getElementById('avg').textContent = '₹' + avgPerDay.toLocaleString('en-IN');
+
+  if (activeTab === 'daily') renderDaily(filtered, filterVal);
+  else renderMonthly();
+}
+
+function renderDaily(filtered, filterVal) {
+  const list = document.getElementById('expense-list');
+  document.getElementById('history-label').textContent = filtered.length
+    ? filtered.length + ' expense' + (filtered.length > 1 ? 's' : '')
+    : 'History';
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🧾</div><p>No expenses for this month.</p></div>';
+    return;
+  }
+
+  // group by date
+  const groups = {};
+  filtered.forEach(e => {
+    const k = dateKey(e.ts);
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(e);
+  });
+
+  const sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+  list.innerHTML = sortedDates.map(dk => {
+    const dayTotal = groups[dk].reduce((s,e) => s + e.amount, 0);
+    const items = groups[dk].map(e => `
+      <div class="expense-item">
+        <div class="exp-left">
+          <div class="exp-icon">${getEmoji(e.name)}</div>
+          <div>
+            <div class="exp-name">${e.name}</div>
+            <div class="exp-time">${fmtTime(e.ts)}</div>
+          </div>
+        </div>
+        <div class="exp-right">
+          <div class="exp-amount">${fmt(e.amount)}</div>
+          <button class="del-btn" onclick="deleteExpense(${e.id})" aria-label="Delete">🗑</button>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="date-group">
+        <div class="date-header">
+          <span class="date-label">${friendlyDate(dk)}</span>
+          <span class="date-total">${fmt(dayTotal)}</span>
+        </div>
+        <div class="expense-list">${items}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMonthly() {
+  const ml = document.getElementById('monthly-list');
+  if (!expenses.length) {
+    ml.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>No expenses yet.</p></div>';
+    return;
+  }
+
+  const monthGroups = {};
+  expenses.forEach(e => {
+    const k = monthKey(e.ts);
+    if (!monthGroups[k]) monthGroups[k] = { total: 0, count: 0 };
+    monthGroups[k].total += e.amount;
+    monthGroups[k].count++;
+  });
+
+  const sortedMonths = Object.keys(monthGroups).sort((a,b) => b.localeCompare(a));
+  const maxTotal = Math.max(...sortedMonths.map(k => monthGroups[k].total));
+
+  ml.innerHTML = sortedMonths.map(mk => {
+    const g = monthGroups[mk];
+    const pct = maxTotal > 0 ? Math.round((g.total / maxTotal) * 100) : 0;
+    return `
+      <div class="month-row" onclick="document.getElementById('month-filter').value='${mk}'; switchTab('daily');" style="cursor:pointer;">
+        <div class="month-row-top">
+          <span class="month-name">${friendlyMonth(mk)}</span>
+          <span class="month-amt">${fmt(g.total)}</span>
+        </div>
+        <div class="month-bar-bg"><div class="month-bar-fill" style="width:${pct}%"></div></div>
+        <div class="month-meta">${g.count} expense${g.count > 1 ? 's' : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('exp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('exp-amount').focus(); });
+document.getElementById('exp-amount').addEventListener('keydown', e => { if (e.key === 'Enter') addExpense(); });
+
+load();
+</script>
+</body>
+</html>
